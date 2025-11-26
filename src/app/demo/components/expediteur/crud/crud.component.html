@@ -1,0 +1,173 @@
+<div class="grid">
+  <div class="col-12">
+    <div class="card px-6 py-6">
+      <p-toast></p-toast>
+
+      <!-- Toolbar -->
+      <p-toolbar styleClass="mb-4">
+        <ng-template pTemplate="left">
+          <div class="my-2">
+            <button
+              pButton
+              pRipple
+              label="Nouveau"
+              icon="pi pi-plus"
+              class="p-button-success mr-2"
+              (click)="openNew()"
+            ></button>
+
+            <button
+              pButton
+              pRipple
+              label="Supprimer"
+              icon="pi pi-trash"
+              class="p-button-danger"
+              (click)="deleteSelectedExpediteurs()"
+              [disabled]="!selectedExpediteurs || !selectedExpediteurs.length"
+            ></button>
+          </div>
+        </ng-template>
+
+        <ng-template pTemplate="right">
+          <p-fileUpload mode="basic" accept="image/*" [maxFileSize]="1000000" label="Import" chooseLabel="Import" class="mr-2 inline-block"></p-fileUpload>
+          <button pButton pRipple label="Export" icon="pi pi-upload" class="p-button-help" (click)="dt.exportCSV()"></button>
+        </ng-template>
+      </p-toolbar>
+
+      <!-- Table -->
+      <p-table
+        #dt
+        [value]="expediteurs"
+        [columns]="cols"
+        responsiveLayout="scroll"
+        [rows]="10"
+        [paginator]="true"
+        [rowsPerPageOptions]="[5, 10, 20]"
+        [showCurrentPageReport]="true"
+        currentPageReportTemplate="Affichage {first} à {last} sur {totalRecords} enregistrements"
+        [(selection)]="selectedExpediteurs"
+        selectionMode="multiple"
+        [rowHover]="true"
+        dataKey="id"
+      >
+        <ng-template pTemplate="caption">
+          <div class="flex flex-column md:flex-row md:justify-content-between md:align-items-center">
+            <h5 class="m-0">Gestion des Expéditeurs</h5>
+            <span class="block mt-2 md:mt-0 p-input-icon-left">
+              <i class="pi pi-search"></i>
+              <input
+                pInputText
+                type="text"
+                (input)="onGlobalFilter(dt, $event)"
+                placeholder="Rechercher..."
+                class="w-full sm:w-auto"
+              />
+            </span>
+          </div>
+        </ng-template>
+
+        <ng-template pTemplate="header">
+          <tr>
+            <th style="width: 3rem">
+              <p-tableHeaderCheckbox></p-tableHeaderCheckbox>
+            </th>
+            <th pSortableColumn="nom">Nom <p-sortIcon field="nom"></p-sortIcon></th>
+            <th pSortableColumn="email">Email <p-sortIcon field="email"></p-sortIcon></th>
+            <th pSortableColumn="telephone">Téléphone <p-sortIcon field="telephone"></p-sortIcon></th>
+            <th pSortableColumn="adresse">Adresse <p-sortIcon field="adresse"></p-sortIcon></th>
+            <th></th>
+          </tr>
+        </ng-template>
+
+        <ng-template pTemplate="body" let-expediteur>
+          <tr>
+            <td>
+              <p-tableCheckbox [value]="expediteur"></p-tableCheckbox>
+            </td>
+            <td>{{ expediteur.nom }}</td>
+            <td>{{ expediteur.email }}</td>
+            <td>{{ expediteur.telephone }}</td>
+            <td>{{ expediteur.adresse }}</td>
+            <td>
+              <div class="flex">
+                <button
+                  pButton
+                  pRipple
+                  icon="pi pi-pencil"
+                  class="p-button-rounded p-button-success mr-2"
+                  (click)="editExpediteur(expediteur)"
+                ></button>
+                <button
+                  pButton
+                  pRipple
+                  icon="pi pi-trash"
+                  class="p-button-rounded p-button-warning"
+                  (click)="deleteExpediteur(expediteur)"
+                ></button>
+              </div>
+            </td>
+          </tr>
+        </ng-template>
+      </p-table>
+    </div>
+
+    <!-- Dialog Formulaire -->
+    <p-dialog
+      [(visible)]="expediteurDialog"
+      [style]="{ width: '450px' }"
+      header="Détails Expéditeur"
+      [modal]="true"
+      class="p-fluid"
+    >
+      <ng-template pTemplate="content">
+        <div class="field">
+          <label for="nom">Nom</label>
+          <input type="text" pInputText id="nom" [(ngModel)]="expediteur.nom" required autofocus
+                 [ngClass]="{'ng-invalid ng-dirty': submitted && !expediteur.nom}" />
+          <small *ngIf="submitted && !expediteur.nom">Le nom est obligatoire.</small>
+        </div>
+        <div class="field">
+          <label for="email">Email</label>
+          <input type="text" pInputText id="email" [(ngModel)]="expediteur.email" />
+        </div>
+        <div class="field">
+          <label for="telephone">Téléphone</label>
+          <input type="text" pInputText id="telephone" [(ngModel)]="expediteur.telephone" />
+        </div>
+        <div class="field">
+          <label for="adresse">Adresse</label>
+          <input type="text" pInputText id="adresse" [(ngModel)]="expediteur.adresse" />
+        </div>
+      </ng-template>
+
+      <ng-template pTemplate="footer">
+        <button pButton pRipple label="Annuler" icon="pi pi-times" class="p-button-text" (click)="hideDialog()"></button>
+        <button pButton pRipple label="Enregistrer" icon="pi pi-check" class="p-button-text" (click)="saveExpediteur()"></button>
+      </ng-template>
+    </p-dialog>
+
+    <!-- Confirm Suppression -->
+    <p-dialog [(visible)]="deleteExpediteurDialog" header="Confirmation" [modal]="true" [style]="{ width: '450px' }">
+      <div class="flex align-items-center justify-content-center">
+        <i class="pi pi-exclamation-triangle mr-3" style="font-size: 2rem"></i>
+        <span *ngIf="expediteur">Êtes-vous sûr de vouloir supprimer <b>{{ expediteur.nom }}</b> ?</span>
+      </div>
+      <ng-template pTemplate="footer">
+        <button pButton pRipple icon="pi pi-times" class="p-button-text" label="Non" (click)="deleteExpediteurDialog = false"></button>
+        <button pButton pRipple icon="pi pi-check" class="p-button-text" label="Oui" (click)="confirmDelete()"></button>
+      </ng-template>
+    </p-dialog>
+
+    <!-- Confirm Suppression Multiple -->
+    <p-dialog [(visible)]="deleteExpediteursDialog" header="Confirmation" [modal]="true" [style]="{ width: '450px' }">
+      <div class="flex align-items-center justify-content-center">
+        <i class="pi pi-exclamation-triangle mr-3" style="font-size: 2rem"></i>
+        <span>Êtes-vous sûr de vouloir supprimer les expéditeurs sélectionnés ?</span>
+      </div>
+      <ng-template pTemplate="footer">
+        <button pButton pRipple icon="pi pi-times" class="p-button-text" label="Non" (click)="deleteExpediteursDialog = false"></button>
+        <button pButton pRipple icon="pi pi-check" class="p-button-text" label="Oui" (click)="confirmDeleteSelected()"></button>
+      </ng-template>
+    </p-dialog>
+  </div>
+</div>
